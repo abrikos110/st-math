@@ -68,7 +68,71 @@ struct ddouble {
         return -(oth -= *this);
     }
 
-
+    ddouble &operator*=(ddouble oth) {
+        double old_min = min;
+        if (oth.max <= 0) {
+            if (max <= 0) {
+                std::fesetround(FE_DOWNWARD);
+                min = max * oth.max;
+                std::fesetround(FE_UPWARD);
+                max = old_min * oth.min;
+            }
+            else if (min <= 0 && 0 <= max) {
+                std::fesetround(FE_DOWNWARD);
+                min = max * oth.min;
+                std::fesetround(FE_UPWARD);
+                max = old_min * oth.min;
+            }
+            else /* 0 <= min */ {
+                std::fesetround(FE_DOWNWARD);
+                min = max * oth.min;
+                std::fesetround(FE_UPWARD);
+                max = old_min * oth.max;
+            }
+        }
+        else if (oth.min <= 0 && 0 <= oth.max) {
+            if (max <= 0) {
+                std::fesetround(FE_DOWNWARD);
+                min = min * oth.max;
+                std::fesetround(FE_UPWARD);
+                max = old_min * oth.min;
+            }
+            else if (min <= 0 && 0 <= max) {
+                std::fesetround(FE_DOWNWARD);
+                min = std::min(min * oth.max, max * oth.min);
+                std::fesetround(FE_UPWARD);
+                max = std::max(old_min * oth.min, max * oth.max);
+            }
+            else /* 0 <= min */ {
+                std::fesetround(FE_DOWNWARD);
+                min = max * oth.min;
+                std::fesetround(FE_UPWARD);
+                max = max * oth.max;
+            }
+        }
+        else /* 0 <= oth.min */ {
+            if (max <= 0) {
+                std::fesetround(FE_DOWNWARD);
+                min = min * oth.max;
+                std::fesetround(FE_UPWARD);
+                max = max * oth.min;
+            }
+            else if (min <= 0 && 0 <= max) {
+                std::fesetround(FE_DOWNWARD);
+                min = min * oth.max;
+                std::fesetround(FE_UPWARD);
+                max = max * oth.max;
+            }
+            else /* 0 <= min */ {
+                std::fesetround(FE_DOWNWARD);
+                min = min * oth.min;
+                std::fesetround(FE_UPWARD);
+                max = max * oth.max;
+            }
+        }
+        return *this;
+    }
+#if 0
     ddouble &operator*=(ddouble oth) {
         std::fesetround(FE_DOWNWARD);
         double old_min = min;
@@ -77,6 +141,7 @@ struct ddouble {
         max = std::max({old_min * oth.min, old_min * oth.max, max * oth.min, max * oth.max});
         return *this;
     }
+#endif
     ddouble operator*(ddouble oth) {
         return oth *= *this;
     }
