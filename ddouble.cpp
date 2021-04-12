@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 #include <cfenv>
 #include <algorithm>
 
@@ -13,7 +14,7 @@ struct ddouble {
         }
     }
 
-    ddouble(double val)
+    ddouble(double val = 0)
         : min(val), max(val) {}
 
 
@@ -32,6 +33,11 @@ struct ddouble {
             return true;
         }
         return min <= oth && oth <= max;
+    }
+
+    double uncertainty() {
+        std::fesetround(FE_UPWARD);
+        return max - min;
     }
 
 
@@ -97,6 +103,19 @@ struct ddouble {
         return copy /= oth;
     }
 };
+
+
+namespace std {
+    ddouble abs(ddouble x) {
+        if (x.min <= 0 && 0 <= x.max) {
+            return ddouble(0, std::max(-x.min, x.max));
+        }
+        if (x.max <= 0) {
+            return ddouble(-x.max, -x.min);
+        }
+        return x;
+    }
+}
 
 
 std::ostream& operator<<(std::ostream &in, ddouble x) {
