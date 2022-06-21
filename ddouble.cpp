@@ -4,6 +4,18 @@
 #include <algorithm>
 
 
+namespace {
+    void r_up() {
+        // round up
+        std::fesetround(FE_UPWARD);
+    }
+
+    void r_down() {
+        // round down
+        std::fesetround(FE_DOWNWARD);
+    }
+}
+
 struct ddouble {
     double min, max;
 
@@ -23,20 +35,20 @@ struct ddouble {
     }
 
     bool contain(ddouble oth) {
-        if (min + max != min + max) {
+        if (!std::isfinite(min) || !std::isfinite(max)) {
             return true;
         }
         return min <= oth.min && oth.max <= max;
     }
     bool contain(double oth) {
-        if (min + max != min + max) {
+        if (!std::isfinite(min) || !std::isfinite(max)) {
             return true;
         }
         return min <= oth && oth <= max;
     }
 
     double uncertainty() {
-        std::fesetround(FE_UPWARD);
+        r_up();
         return max - min;
     }
 
@@ -46,9 +58,10 @@ struct ddouble {
     }
 
     ddouble &operator+=(ddouble oth) {
-        std::fesetround(FE_DOWNWARD);
+        r_down();
         min += oth.min;
-        std::fesetround(FE_UPWARD);
+
+        r_up();
         max += oth.max;
         return *this;
     }
@@ -58,9 +71,10 @@ struct ddouble {
 
 
     ddouble &operator-=(ddouble oth) {
-        std::fesetround(FE_DOWNWARD);
+        r_down();
         min -= oth.max;
-        std::fesetround(FE_UPWARD);
+
+        r_up();
         max -= oth.min;
         return *this;
     }
@@ -72,61 +86,70 @@ struct ddouble {
         double old_min = min;
         if (oth.max <= 0) {
             if (max <= 0) {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = max * oth.max;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = old_min * oth.min;
             }
             else if (min <= 0 && 0 <= max) {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = max * oth.min;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = old_min * oth.min;
             }
             else /* 0 <= min */ {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = max * oth.min;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = old_min * oth.max;
             }
         }
         else if (oth.min <= 0 && 0 <= oth.max) {
             if (max <= 0) {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = min * oth.max;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = old_min * oth.min;
             }
             else if (min <= 0 && 0 <= max) {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = std::min(min * oth.max, max * oth.min);
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = std::max(old_min * oth.min, max * oth.max);
             }
             else /* 0 <= min */ {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = max * oth.min;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = max * oth.max;
             }
         }
         else /* 0 <= oth.min */ {
             if (max <= 0) {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = min * oth.max;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = max * oth.min;
             }
             else if (min <= 0 && 0 <= max) {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = min * oth.max;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = max * oth.max;
             }
             else /* 0 <= min */ {
-                std::fesetround(FE_DOWNWARD);
+                r_down();
                 min = min * oth.min;
-                std::fesetround(FE_UPWARD);
+
+                r_up();
                 max = max * oth.max;
             }
         }
@@ -134,10 +157,10 @@ struct ddouble {
     }
 #if 0
     ddouble &operator*=(ddouble oth) {
-        std::fesetround(FE_DOWNWARD);
+        r_down();
         double old_min = min;
         min = std::min({min * oth.min, min * oth.max, max * oth.min, max * oth.max});
-        std::fesetround(FE_UPWARD);
+        r_up();
         max = std::max({old_min * oth.min, old_min * oth.max, max * oth.min, max * oth.max});
         return *this;
     }
@@ -157,10 +180,13 @@ struct ddouble {
             min = -min;
             max = -max;
         }
-        std::fesetround(FE_DOWNWARD);
+
+        r_down();
         min = min / (min < 0 ? oth.min : oth.max);
-        std::fesetround(FE_UPWARD);
+
+        r_up();
         max = max / (max < 0 ? oth.max : oth.min);
+
         return *this;
     }
     ddouble operator/(ddouble oth) {
@@ -179,6 +205,10 @@ namespace std {
             return ddouble(-x.max, -x.min);
         }
         return x;
+    }
+
+    bool isfinite(ddouble x) {
+        return isfinite(x.min) && isfinite(x.max);
     }
 }
 

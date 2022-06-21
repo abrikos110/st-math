@@ -7,7 +7,7 @@ static const double pi = std::atan2(0, -1);
 
 ddouble my_sin(double z) {
     ddouble x = z;
-    x -= 2*pi * int(z/2/pi);
+    x -= 2*pi * std::round(z/2/pi);
     // x - x**3/3! + x**5/5!
     ddouble f = 1;
     ddouble px = x;
